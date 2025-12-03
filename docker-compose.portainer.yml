@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: senshi-backend
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/staticfiles
+    expose:
+      - 8000
+    env_file:
+      - ./backend/.env
+    networks:
+      - senshi-network
+      - portainer-network  # Conectar à rede do Portainer para acessar Postgres e MinIO
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: senshi-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html
+      - static_volume:/app/staticfiles
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+    networks:
+      - senshi-network
+    restart: unless-stopped
+
+volumes:
+  static_volume:
+
+networks:
+  senshi-network:
+    driver: bridge
+  portainer-network:
+    external: true  # Usa a rede existente do Portainer

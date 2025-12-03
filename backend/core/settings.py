@@ -21,16 +21,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-les1n63c#ao74!oy4oa@w0(6uii$lboghcan#x)b2#56y$a1z=')
+SECRET_KEY = config('SECRET_KEY')  # CRÍTICO: Sem default - falha se não existir
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)  # CRÍTICO: Default False
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,senshin-habits.aytt.com.br', cast=Csv())
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "https://senshin-habits.aytt.com.br",
 ]
 
 # Application definition
@@ -184,9 +187,39 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),  # Token dura 24 horas
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),  # Refresh token dura 30 dias
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # CRÍTICO: 15min (era 24h)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),     # 7 dias (era 30)
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
 }
+# ========== RATE LIMITING (CRÍTICO) ==========
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
+    'rest_framework.throttling.AnonRateThrottle',
+    'rest_framework.throttling.UserRateThrottle'
+]
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    'anon': '10/hour',    # IPs não autenticados
+    'user': '100/hour',   # Usuários autenticados
+}
+
+# ========== SEGURANÇA PARA PRODUÇÃO ==========
+if not DEBUG:
+    # Força HTTPS
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000  # 1 ano
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Proteção contra Host Header attacks
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Limites de upload (CRÍTICO)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB

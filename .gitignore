@@ -1,8 +1,46 @@
-# .gitignore
-backend/env/
-__pycache__/
+# Python
 *.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+backend/env/
+backend/venv/
+*.sqlite3
 db.sqlite3
-.env
-.DS_Store
 
+# Django
+*.log
+local_settings.py
+staticfiles/
+media/
+
+# Node
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+frontend/dist/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+.claude/
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# OS
+Thumbs.db
