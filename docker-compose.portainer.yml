@@ -16,7 +16,6 @@ services:
       - ./backend/.env
     networks:
       - senshi-network
-      - portainer-network  # Conectar à rede do Portainer para acessar Postgres e MinIO
     restart: unless-stopped
 
   nginx:
@@ -41,6 +40,3 @@ volumes:
 networks:
   senshi-network:
     driver: bridge
-  portainer-network:
-    external: true
-    name: network_swarm_public  # Usa a rede Swarm existente do Portainer
