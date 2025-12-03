@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* FORÇA AS CORES CLARAS */
+  color: #333333;          /* Texto quase preto */
+  background-color: #ffffff; /* Fundo branco */
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Garante que links não fiquem com cor estranha */
+a {
+  font-weight: 500;
+  color: #007bff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #0056b3;
+}
