@@ -20,7 +20,7 @@ frontend/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-frontend/dist/
+# frontend/dist/  # Comentado para permitir deploy via Git
 
 # Environment Variables
 .env
