@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  backend:
+    image: senshi-habits-backend:latest
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=False
+      - ALLOWED_HOSTS=senshin-habits.aytt.com.br,5.161.210.162
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - MINIO_STORAGE_ENDPOINT=${MINIO_STORAGE_ENDPOINT}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_STORAGE_BUCKET_NAME=senshi-habits
+      - AWS_S3_REGION_NAME=us-east-1
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SUPERUSER_KEY=${SUPERUSER_KEY}
+    networks:
+      - senshi-network
+      - network_swarm_public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+      placement:
+        constraints:
+          - node.role == manager
+
+  nginx:
+    image: senshi-habits-nginx:latest
+    networks:
+      - senshi-network
+      - network_swarm_public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=network_swarm_public"
+        - "traefik.http.routers.senshi-habits.rule=Host(`senshin-habits.aytt.com.br`)"
+        - "traefik.http.routers.senshi-habits.entrypoints=websecure"
+        - "traefik.http.routers.senshi-habits.tls=true"
+        - "traefik.http.services.senshi-habits.loadbalancer.server.port=80"
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  senshi-network:
+    driver: overlay
+  network_swarm_public:
+    external: true
