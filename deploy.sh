@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 # 1. Build das imagens
 echo -e "${BLUE}📦 Fazendo build das imagens...${NC}"
 docker build -t senshi-habits-backend:latest -f backend/Dockerfile.prod backend/
-docker build -t senshi-habits-nginx:latest nginx/
+docker build -t senshi-habits-nginx:latest -f nginx/Dockerfile .
 
 # 2. Parar containers standalone se existirem
 echo -e "${BLUE}🛑 Parando containers standalone...${NC}"
