@@ -19,13 +19,19 @@ docker build --no-cache -t senshi-habits-backend:latest -f backend/Dockerfile.pr
 echo -e "${YELLOW}4. Atualizando serviço backend...${NC}"
 docker service update --force --image senshi-habits-backend:latest senshi-habits_backend
 
-echo -e "${YELLOW}5. Rebuilding frontend (nginx)...${NC}"
+echo -e "${YELLOW}5. Building React frontend...${NC}"
+cd frontend
+npm install
+npm run build
+cd ..
+
+echo -e "${YELLOW}6. Rebuilding frontend (nginx)...${NC}"
 docker build -t senshi-habits-frontend:latest -f nginx/Dockerfile .
 
-echo -e "${YELLOW}6. Atualizando serviço frontend...${NC}"
+echo -e "${YELLOW}7. Atualizando serviço frontend...${NC}"
 docker service update --force --image senshi-habits-frontend:latest senshi-habits_nginx
 
-echo -e "${YELLOW}7. Verificando status dos serviços...${NC}"
+echo -e "${YELLOW}8. Verificando status dos serviços...${NC}"
 docker service ps senshi-habits_backend --no-trunc
 docker service ps senshi-habits_nginx --no-trunc
 
