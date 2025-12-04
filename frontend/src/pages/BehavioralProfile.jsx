@@ -4,6 +4,10 @@ import MBTITest from '../components/tests/MBTITest';
 import DISCTest from '../components/tests/DISCTest';
 import EnneagramTest from '../components/tests/EnneagramTest';
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000'
+  : `${window.location.protocol}//${window.location.host}`;
+
 const BehavioralProfile = ({ token }) => {
   const [profile, setProfile] = useState({
     mbti_type: '', disc_type: '', enneagram_type: '', enneagram_wing: '',
@@ -73,7 +77,7 @@ const BehavioralProfile = ({ token }) => {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+      const response = await fetch(`${API_URL}/api/auth/profile/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -91,7 +95,7 @@ const BehavioralProfile = ({ token }) => {
     setMessage('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+      const response = await fetch(`${API_URL}/api/auth/profile/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

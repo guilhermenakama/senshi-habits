@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, AlertTriangle, Lightbulb, Trophy, X, Check, RefreshCw } from 'lucide-react';
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000'
+  : `${window.location.protocol}//${window.location.host}`;
+
 const AIInsightsDashboard = ({ token }) => {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,7 +18,7 @@ const AIInsightsDashboard = ({ token }) => {
   const fetchInsights = async () => {
     setLoading(true);
     try {
-      let url = 'http://127.0.0.1:8000/api/auth/insights/';
+      let url = `${API_URL}/api/auth/insights/`;
 
       if (filter === 'unread') {
         url += '?is_read=false&is_dismissed=false';
@@ -35,7 +39,7 @@ const AIInsightsDashboard = ({ token }) => {
   const generateInsights = async () => {
     setGenerating(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/profile/generate_insights/', {
+      const response = await fetch(`${API_URL}/api/auth/profile/generate_insights/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -55,7 +59,7 @@ const AIInsightsDashboard = ({ token }) => {
 
   const markAsRead = async (id) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/auth/insights/${id}/mark_read/`, {
+      await fetch(`${API_URL}/api/auth/insights/${id}/mark_read/`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -67,7 +71,7 @@ const AIInsightsDashboard = ({ token }) => {
 
   const dismissInsight = async (id) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/auth/insights/${id}/dismiss/`, {
+      await fetch(`${API_URL}/api/auth/insights/${id}/dismiss/`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

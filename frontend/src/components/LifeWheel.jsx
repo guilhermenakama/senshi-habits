@@ -10,6 +10,10 @@ import { PolarArea } from 'react-chartjs-2';
 
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000'
+  : `${window.location.protocol}//${window.location.host}`;
+
 const LifeWheel = ({ token }) => {
   const [chartData, setChartData] = useState(null);
 
@@ -19,7 +23,7 @@ const LifeWheel = ({ token }) => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/tracker/life-assessments/', {
+      const response = await fetch(`${API_URL}/api/tracker/life-assessments/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await response.json();

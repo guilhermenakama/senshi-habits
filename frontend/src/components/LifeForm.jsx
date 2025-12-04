@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000'
+  : `${window.location.protocol}//${window.location.host}`;
+
 const LifeForm = ({ token, onSuccess }) => {
   const [scores, setScores] = useState({
     health_score: 5, career_score: 5, financial_score: 5, social_score: 5,
@@ -12,7 +16,7 @@ const LifeForm = ({ token, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await fetch('http://127.0.0.1:8000/api/tracker/life-assessments/', {
+    await fetch(`${API_URL}/api/tracker/life-assessments/`, {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${token}`,

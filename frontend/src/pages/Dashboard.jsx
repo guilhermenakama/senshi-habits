@@ -26,6 +26,10 @@ import useHabitStats from '../hooks/useHabitStats';
 import useProgressComparison from '../hooks/useProgressComparison';
 import useBodyMetrics from '../hooks/useBodyMetrics';
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000'
+  : `${window.location.protocol}//${window.location.host}`;
+
 const Dashboard = ({ token }) => {
   const { habits, isLoading: habitsLoading } = useHabits(token);
   const { stats: habitStats, isLoading: statsLoading } = useHabitStats(token);
@@ -54,7 +58,7 @@ const Dashboard = ({ token }) => {
 
   const fetchLifeAreas = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/tracker/life-assessments/', {
+      const res = await fetch(`${API_URL}/api/tracker/life-assessments/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

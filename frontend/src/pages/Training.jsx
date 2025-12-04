@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trash2, Plus, Save, Settings, Dumbbell, Copy, X, Check, Search } from 'lucide-react';
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000'
+  : `${window.location.protocol}//${window.location.host}`;
+
 const Training = ({ token }) => {
   const [templates, setTemplates] = useState([]);
   const [exercisesList, setExercisesList] = useState([]);
@@ -25,7 +29,7 @@ const Training = ({ token }) => {
 
   const fetchData = async () => {
     try {
-      const resTemp = await fetch('http://127.0.0.1:8000/api/tracker/templates/', {
+      const resTemp = await fetch(`${API_URL}/api/tracker/templates/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const dataTemp = await resTemp.json();
@@ -39,7 +43,7 @@ const Training = ({ token }) => {
 
   const fetchExercises = async () => {
     try {
-      const resEx = await fetch('http://127.0.0.1:8000/api/tracker/exercises/', {
+      const resEx = await fetch(`${API_URL}/api/tracker/exercises/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const dataEx = await resEx.json();
@@ -86,7 +90,7 @@ const Training = ({ token }) => {
     if (!window.confirm("Deletar esta ficha?")) return;
 
     try {
-      await fetch(`http://127.0.0.1:8000/api/tracker/templates/${templateId}/`, {
+      await fetch(`${API_URL}/api/tracker/templates/${templateId}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -109,8 +113,8 @@ const Training = ({ token }) => {
     };
 
     const url = activeTemplate === 'new'
-      ? 'http://127.0.0.1:8000/api/tracker/templates/'
-      : `http://127.0.0.1:8000/api/tracker/templates/${activeTemplate}/`;
+      ? `${API_URL}/api/tracker/templates/`
+      : `${API_URL}/api/tracker/templates/${activeTemplate}/`;
 
     const method = activeTemplate === 'new' ? 'POST' : 'PUT';
 
@@ -141,7 +145,7 @@ const Training = ({ token }) => {
 
       setCreating(true);
       try {
-        await fetch('http://127.0.0.1:8000/api/tracker/exercises/', {
+        await fetch(`${API_URL}/api/tracker/exercises/`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({

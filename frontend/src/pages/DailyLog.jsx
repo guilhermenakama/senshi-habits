@@ -20,6 +20,10 @@ import {
 } from 'lucide-react';
 import useHabits from '../hooks/useHabits';
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000'
+  : `${window.location.protocol}//${window.location.host}`;
+
 const DailyLog = ({ token }) => {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -57,7 +61,7 @@ const DailyLog = ({ token }) => {
 
   const fetchTemplates = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/tracker/templates/', {
+      const res = await fetch(`${API_URL}/api/tracker/templates/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -69,7 +73,7 @@ const DailyLog = ({ token }) => {
 
   const fetchExercises = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/tracker/exercises/', {
+      const res = await fetch(`${API_URL}/api/tracker/exercises/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -102,7 +106,7 @@ const DailyLog = ({ token }) => {
     formData.append('image', nutritionFile);
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/vision/analyze/', {
+      const res = await fetch(`${API_URL}/api/vision/analyze/`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
@@ -216,7 +220,7 @@ const DailyLog = ({ token }) => {
       const completedHabitsIds = Array.from(checkedHabits);
       if (completedHabitsIds.length > 0) {
         await Promise.all(completedHabitsIds.map(habitId =>
-          fetch('http://127.0.0.1:8000/api/tracker/habit-logs/', {
+          fetch(`${API_URL}/api/tracker/habit-logs/`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -234,7 +238,7 @@ const DailyLog = ({ token }) => {
       // 2. Salvar treino
       const completedExercises = workoutData.filter(ex => ex.exercise_name && ex.exercise_name.trim());
       if (completedExercises.length > 0) {
-        await fetch('http://127.0.0.1:8000/api/tracker/workouts/', {
+        await fetch(`${API_URL}/api/tracker/workouts/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -251,7 +255,7 @@ const DailyLog = ({ token }) => {
 
       // 3. Salvar journal
       if (journal.content.trim() || journal.mood) {
-        await fetch('http://127.0.0.1:8000/api/tracker/journal/', {
+        await fetch(`${API_URL}/api/tracker/journal/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

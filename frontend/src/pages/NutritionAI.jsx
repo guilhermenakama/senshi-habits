@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000'
+  : `${window.location.protocol}//${window.location.host}`;
+
 const NutritionAI = ({ token }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -22,7 +26,7 @@ const NutritionAI = ({ token }) => {
     formData.append('image', selectedFile);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/vision/analyze/', {
+      const response = await fetch(`${API_URL}/api/vision/analyze/`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData,

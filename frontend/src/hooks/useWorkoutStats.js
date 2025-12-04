@@ -1,8 +1,10 @@
 // frontend/src/hooks/useWorkoutStats.js
 
 import { useState, useEffect, useCallback } from 'react';
-// Adapte para a sua biblioteca (Axios ou Fetch)
-const API_URL = 'http://127.0.0.1:8000/api/tracker'; 
+
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000/api/tracker'
+  : `${window.location.protocol}//${window.location.host}/api/tracker`; 
 
 const useWorkoutStats = (token) => {
     const [stats, setStats] = useState({ count: 0, target: 5 });

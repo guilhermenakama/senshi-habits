@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000'
+  : `${window.location.protocol}//${window.location.host}`;
+
 const HabitTrackerWheel = ({ token }) => {
   const [habits, setHabits] = useState([]);
   const [habitLogs, setHabitLogs] = useState([]);
@@ -26,14 +30,14 @@ const HabitTrackerWheel = ({ token }) => {
     setLoading(true);
     try {
       // Busca os hábitos do usuário
-      const habitsResponse = await fetch('http://127.0.0.1:8000/api/tracker/habits/', {
+      const habitsResponse = await fetch(`${API_URL}/api/tracker/habits/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const habitsData = await habitsResponse.json();
       setHabits(habitsData.slice(0, 8)); // Limita a 8 hábitos para não poluir
 
       // Busca todos os logs do mês atual
-      const logsResponse = await fetch('http://127.0.0.1:8000/api/tracker/habit-logs/', {
+      const logsResponse = await fetch(`${API_URL}/api/tracker/habit-logs/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const logsData = await logsResponse.json();
