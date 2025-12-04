@@ -77,7 +77,7 @@ function App() {
       const data = await response.json();
       if (response.ok) {
         setError("");
-        alert("Cadastro realizado com sucesso! Faça login para continuar.");
+        alert(`Cadastro realizado com sucesso!\n\nSeu usuário é: ${data.user.username}\nVocê também pode fazer login com seu email: ${data.user.email}\n\nFaça login para continuar.`);
         setIsRegistering(false);
         setUsername('');
         setPassword('');
@@ -105,7 +105,7 @@ function App() {
 
           {!isRegistering ? (
             <form onSubmit={handleLogin}>
-              <input type="text" placeholder="Usuário" value={username} onChange={e => setUsername(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px', border: '1px solid #ddd' }} required />
+              <input type="text" placeholder="Email ou Usuário" value={username} onChange={e => setUsername(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px', border: '1px solid #ddd' }} required />
               <input type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '5px', border: '1px solid #ddd' }} required />
               {error && <p style={{ color: 'red', marginBottom: '10px', fontSize: '14px' }}>{error}</p>}
               <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>

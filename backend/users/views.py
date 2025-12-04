@@ -1,8 +1,9 @@
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import UserProfile, AIInsight
-from .serializers import UserProfileSerializer, AIInsightSerializer, UserRegistrationSerializer
+from .serializers import UserProfileSerializer, AIInsightSerializer, UserRegistrationSerializer, EmailOrUsernameTokenObtainPairSerializer
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -26,6 +27,13 @@ class UserRegistrationView(generics.CreateAPIView):
                 "first_name": user.first_name
             }
         }, status=status.HTTP_201_CREATED)
+
+
+class EmailOrUsernameTokenObtainPairView(TokenObtainPairView):
+    """
+    View customizada para login com email ou username
+    """
+    serializer_class = EmailOrUsernameTokenObtainPairSerializer
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):

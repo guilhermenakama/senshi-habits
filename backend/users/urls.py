@@ -1,9 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,  # View pronta para Login (recebe user/senha, devolve token)
-    TokenRefreshView,     # View para renovar o token expirado
-)
+from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
 
 router = DefaultRouter()
@@ -12,7 +9,7 @@ router.register(r'insights', views.AIInsightViewSet, basename='insights')
 
 urlpatterns = [
     path('register/', views.UserRegistrationView.as_view(), name='register'),
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('login/', views.EmailOrUsernameTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('', include(router.urls)),
 ]

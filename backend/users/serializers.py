@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import UserProfile, AIInsight
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -62,3 +64,35 @@ class AIInsightSerializer(serializers.ModelSerializer):
             'priority', 'context_data', 'is_read', 'is_dismissed', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
+
+
+class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Permite login com email ou username
+    """
+    username_field = 'username'  # Mantém o nome do campo como 'username'
+
+    def validate(self, attrs):
+        # Pega o valor do campo username (que pode ser email ou username)
+        username_or_email = attrs.get('username')
+        password = attrs.get('password')
+
+        # Usa o backend customizado para autenticar
+        user = authenticate(
+            request=self.context.get('request'),
+            username=username_or_email,
+            password=password
+        )
+
+        if user is None:
+            raise serializers.ValidationError('Credenciais inválidas')
+
+        # Continua com a validação normal do JWT
+        refresh = self.get_token(user)
+
+        data = {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+
+        return data
