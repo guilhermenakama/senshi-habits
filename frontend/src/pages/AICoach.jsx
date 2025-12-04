@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import AIInsightsDashboard from '../components/AIInsightsDashboard';
-import { Sparkles, ArrowRight, Target, Brain, TrendingUp, Heart, Zap, Shield } from 'lucide-react';
+import AIChat from '../components/AIChat';
+import { Sparkles, ArrowRight, Target, Brain, TrendingUp, Heart, Zap, Shield, MessageCircle, Lightbulb } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AICoach = ({ token }) => {
+  const [activeTab, setActiveTab] = useState('insights'); // 'insights' or 'chat'
+
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
       {/* Hero Section */}
@@ -66,8 +70,46 @@ const AICoach = ({ token }) => {
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300/20 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Dashboard de Insights */}
-      <AIInsightsDashboard token={token} />
+      {/* Tabs Navigation */}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('insights')}
+            className={`flex-1 px-6 py-4 font-semibold text-lg flex items-center justify-center gap-3 transition-all ${
+              activeTab === 'insights'
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Lightbulb className="w-5 h-5" />
+            Insights Automáticos
+          </button>
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`flex-1 px-6 py-4 font-semibold text-lg flex items-center justify-center gap-3 transition-all ${
+              activeTab === 'chat'
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <MessageCircle className="w-5 h-5" />
+            Chat com IAs Especializadas
+          </button>
+        </div>
+
+        <div className="p-6">
+          {activeTab === 'insights' ? (
+            <AIInsightsDashboard token={token} />
+          ) : (
+            <AIChat token={token} />
+          )}
+        </div>
+      </div>
+
+      {activeTab === 'insights' && (
+        <>
+      {/* Dashboard de Insights - Movido para dentro da aba */}
+
 
       {/* Como Funciona - Redesigned */}
       <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -172,6 +214,8 @@ const AICoach = ({ token }) => {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

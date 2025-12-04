@@ -128,3 +128,57 @@ class AIInsight(models.Model):
 
     def __str__(self):
         return f"{self.get_insight_type_display()} - {self.title}"
+
+
+class Conversation(models.Model):
+    """
+    Conversa com uma IA especializada (Nutricionista, Personal Trainer, Mentora)
+    """
+    AI_TYPE_CHOICES = [
+        ('nutritionist', 'Nutricionista IA'),
+        ('personal_trainer', 'Personal Trainer IA'),
+        ('mentor', 'Mentora IA'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations')
+    ai_type = models.CharField(max_length=20, choices=AI_TYPE_CHOICES)
+    title = models.CharField(max_length=200, help_text="Título automático baseado na primeira mensagem")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = "Conversa com IA"
+        verbose_name_plural = "Conversas com IA"
+
+    def __str__(self):
+        return f"{self.get_ai_type_display()} - {self.title} ({self.user.username})"
+
+
+class Message(models.Model):
+    """
+    Mensagem individual dentro de uma conversa
+    """
+    ROLE_CHOICES = [
+        ('user', 'Usuário'),
+        ('assistant', 'Assistente IA'),
+    ]
+
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    content = models.TextField()
+
+    # Metadados da resposta da IA
+    context_used = models.JSONField(blank=True, null=True, help_text="Dados do usuário usados para gerar a resposta")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = "Mensagem"
+        verbose_name_plural = "Mensagens"
+
+    def __str__(self):
+        preview = self.content[:50] + "..." if len(self.content) > 50 else self.content
+        return f"{self.get_role_display()}: {preview}"

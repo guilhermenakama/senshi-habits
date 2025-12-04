@@ -2,8 +2,12 @@ from rest_framework import viewsets, permissions, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .models import UserProfile, AIInsight
-from .serializers import UserProfileSerializer, AIInsightSerializer, UserRegistrationSerializer, EmailOrUsernameTokenObtainPairSerializer
+from .models import UserProfile, AIInsight, Conversation, Message
+from .serializers import (
+    UserProfileSerializer, AIInsightSerializer, UserRegistrationSerializer,
+    EmailOrUsernameTokenObtainPairSerializer, ConversationSerializer,
+    ConversationListSerializer, MessageSerializer
+)
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -138,3 +142,116 @@ class AIInsightViewSet(viewsets.ModelViewSet):
             is_dismissed=False
         ).count()
         return Response({"count": count})
+
+
+class ConversationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gerenciar conversas com IAs especializadas
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Conversation.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ConversationListSerializer
+        return ConversationSerializer
+
+    def create(self, request, *args, **kwargs):
+        """
+        Cria nova conversa com uma IA especializada
+        """
+        ai_type = request.data.get('ai_type')
+
+        if ai_type not in ['nutritionist', 'personal_trainer', 'mentor']:
+            return Response(
+                {"error": "Tipo de IA inválido. Use: nutritionist, personal_trainer ou mentor"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        conversation = Conversation.objects.create(
+            user=request.user,
+            ai_type=ai_type,
+            title="Nova Conversa"  # Será atualizado com a primeira mensagem
+        )
+
+        serializer = ConversationSerializer(conversation)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def send_message(self, request, pk=None):
+        """
+        Envia mensagem e recebe resposta da IA
+        """
+        from .services import AIChatService
+
+        conversation = self.get_object()
+        user_message_content = request.data.get('message', '').strip()
+
+        if not user_message_content:
+            return Response(
+                {"error": "Mensagem não pode estar vazia"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Criar mensagem do usuário
+        user_message = Message.objects.create(
+            conversation=conversation,
+            role='user',
+            content=user_message_content
+        )
+
+        # Gerar resposta da IA
+        ai_service = AIChatService(user=request.user, ai_type=conversation.ai_type)
+        ai_response_content, context_used = ai_service.generate_chat_response(
+            conversation=conversation,
+            user_message=user_message_content
+        )
+
+        # Criar mensagem da IA
+        ai_message = Message.objects.create(
+            conversation=conversation,
+            role='assistant',
+            content=ai_response_content,
+            context_used=context_used
+        )
+
+        # Se for a primeira mensagem, gerar título da conversa
+        if conversation.messages.count() == 2:  # User + Assistant
+            title = ai_service.generate_conversation_title(user_message_content)
+            conversation.title = title
+            conversation.save()
+
+        # Retornar conversa atualizada
+        serializer = ConversationSerializer(conversation)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['delete'])
+    def clear_history(self, request, pk=None):
+        """
+        Limpa o histórico de mensagens da conversa
+        """
+        conversation = self.get_object()
+        conversation.messages.all().delete()
+        conversation.title = "Nova Conversa"
+        conversation.save()
+
+        return Response({"message": "Histórico limpo com sucesso"})
+
+    @action(detail=False, methods=['get'])
+    def by_ai_type(self, request):
+        """
+        Lista conversas filtradas por tipo de IA
+        """
+        ai_type = request.query_params.get('type')
+
+        if not ai_type:
+            return Response(
+                {"error": "Parâmetro 'type' é obrigatório"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        conversations = self.get_queryset().filter(ai_type=ai_type)
+        serializer = ConversationListSerializer(conversations, many=True)
+        return Response(serializer.data)

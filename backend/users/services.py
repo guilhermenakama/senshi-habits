@@ -307,3 +307,161 @@ Seja {context['preferencia_comunicacao']}.
 
         # Implementação completa
         pass
+
+
+class AIChatService(AICoachService):
+    """
+    Serviço de chat com IAs especializadas (Nutricionista, Personal Trainer, Mentora)
+    Mantém histórico de conversação e usa contexto do usuário
+    """
+
+    AI_PERSONAS = {
+        'nutritionist': {
+            'name': 'Dra. Ana - Nutricionista IA',
+            'role': 'Nutricionista Esportiva especializada em nutrição personalizada',
+            'expertise': 'nutrição, macronutrientes, dieta, alimentação saudável, perda de peso, ganho de massa',
+            'tone': 'profissional, educativa, mas acolhedora',
+        },
+        'personal_trainer': {
+            'name': 'Coach Marcus - Personal Trainer IA',
+            'role': 'Personal Trainer especializado em treino funcional e musculação',
+            'expertise': 'treino, exercícios, musculação, cardio, performance, recuperação',
+            'tone': 'motivador, enérgico, direto',
+        },
+        'mentor': {
+            'name': 'Sofia - Mentora de Vida IA',
+            'role': 'Mentora de desenvolvimento pessoal e mudança de hábitos',
+            'expertise': 'hábitos, mindset, psicologia comportamental, motivação, autocuidado',
+            'tone': 'empática, encorajadora, sábia',
+        }
+    }
+
+    def __init__(self, user, ai_type):
+        super().__init__(user)
+        self.ai_type = ai_type
+        self.persona = self.AI_PERSONAS.get(ai_type, self.AI_PERSONAS['mentor'])
+
+    def generate_chat_response(self, conversation, user_message):
+        """
+        Gera resposta da IA baseada no histórico da conversa e contexto do usuário
+        """
+        context = self.get_user_context()
+
+        # Construir histórico de mensagens
+        messages_history = conversation.messages.all()[:20]  # Últimas 20 mensagens
+        history_text = "\n".join([
+            f"{'Usuário' if msg.role == 'user' else self.persona['name']}: {msg.content}"
+            for msg in messages_history
+        ])
+
+        system_prompt = f"""
+Você é {self.persona['name']}, {self.persona['role']}.
+
+**SUA ESPECIALIDADE:** {self.persona['expertise']}
+**TOM DE VOZ:** {self.persona['tone']}
+
+**PERFIL DO USUÁRIO:**
+- Nome: {self.user.first_name or self.user.username}
+- MBTI: {context['perfil_comportamental']['mbti']}
+- DISC: {context['perfil_comportamental']['disc']}
+- Eneagrama: Tipo {context['perfil_comportamental']['eneagrama']} {context['perfil_comportamental']['wing']}
+
+**OBJETIVOS DO USUÁRIO:**
+{context['objetivos']}
+
+**DESAFIOS:**
+{context['desafios']}
+
+**ESTILO DE MOTIVAÇÃO:**
+{context['estilo_motivacao']}
+
+**GATILHOS DE RECAÍDA:**
+{context['gatilhos']}
+
+**PREFERÊNCIA DE COMUNICAÇÃO:** {context['preferencia_comunicacao']}
+
+**PROGRESSO RECENTE (últimos 7 dias):**
+- Hábitos rastreados: {context['progresso_7_dias']['habitos_total']}
+- Taxa de conclusão: {context['progresso_7_dias']['taxa_conclusao']}%
+- Treinos realizados: {context['progresso_7_dias']['treinos_realizados']}
+
+{self._format_additional_context(context)}
+
+**DIRETRIZES:**
+1. Mantenha consistência com o histórico da conversa
+2. Use o perfil comportamental para personalizar sua abordagem
+3. Seja prática e dê conselhos acionáveis
+4. Faça perguntas para entender melhor quando necessário
+5. Celebre pequenas vitórias e encoraje em dificuldades
+6. Use dados reais do progresso quando relevante
+7. Seja autêntica à sua persona ({self.persona['name']})
+8. Mantenha respostas concisas (2-4 parágrafos idealmente)
+
+**HISTÓRICO DA CONVERSA:**
+{history_text}
+
+**NOVA MENSAGEM DO USUÁRIO:**
+{user_message}
+
+**SUA RESPOSTA (como {self.persona['name']}):**
+"""
+
+        try:
+            response = self.model.generate_content(system_prompt)
+            ai_response = response.text.strip()
+
+            return ai_response, context
+
+        except Exception as e:
+            print(f"Erro ao gerar resposta do chat: {e}")
+            return f"Desculpe, tive um problema técnico. Pode tentar novamente?", None
+
+    def _format_additional_context(self, context):
+        """Formata contexto adicional dependendo do tipo de IA"""
+        additional = ""
+
+        if self.ai_type == 'nutritionist' and context.get('medidas_corporais'):
+            additional += f"\n**MEDIDAS CORPORAIS ATUAIS:**\n"
+            additional += f"- Peso: {context['medidas_corporais']['peso']}kg\n"
+            additional += f"- Massa Magra: {context['medidas_corporais']['massa_magra']}kg\n"
+            additional += f"- Gordura: {context['medidas_corporais']['gordura_percentual']}%\n"
+
+        if self.ai_type == 'personal_trainer' and context.get('medidas_corporais'):
+            additional += f"\n**MEDIDAS E PERFORMANCE:**\n"
+            additional += f"- Peso: {context['medidas_corporais']['peso']}kg\n"
+            additional += f"- Massa Magra: {context['medidas_corporais']['massa_magra']}kg\n"
+
+        if self.ai_type == 'mentor' and context.get('roda_da_vida'):
+            additional += f"\n**RODA DA VIDA (Última Avaliação):**\n"
+            wheel = context['roda_da_vida']
+            additional += f"- Saúde: {wheel['saude']}/10\n"
+            additional += f"- Carreira: {wheel['carreira']}/10\n"
+            additional += f"- Financeiro: {wheel['financeiro']}/10\n"
+            additional += f"- Social: {wheel['social']}/10\n"
+            additional += f"- Família: {wheel['familia']}/10\n"
+            additional += f"- Amor: {wheel['amor']}/10\n"
+            additional += f"- Espiritual: {wheel['espiritual']}/10\n"
+            additional += f"- Intelectual: {wheel['intelectual']}/10\n"
+            additional += f"- Média Geral: {wheel['media']}/10\n"
+
+        return additional
+
+    def generate_conversation_title(self, first_message):
+        """
+        Gera um título automático para a conversa baseado na primeira mensagem
+        """
+        prompt = f"""
+Baseado nesta primeira mensagem do usuário, crie um título curto (máximo 50 caracteres) para a conversa:
+
+"{first_message}"
+
+Retorne APENAS o título, sem aspas ou formatação extra.
+"""
+
+        try:
+            response = self.model.generate_content(prompt)
+            title = response.text.strip().replace('"', '').replace("'", '')[:200]
+            return title
+        except:
+            # Fallback: usar as primeiras palavras da mensagem
+            return first_message[:50] + "..." if len(first_message) > 50 else first_message

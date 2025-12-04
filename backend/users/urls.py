@@ -6,6 +6,7 @@ from . import views
 router = DefaultRouter()
 router.register(r'profile', views.UserProfileViewSet, basename='profile')
 router.register(r'insights', views.AIInsightViewSet, basename='insights')
+router.register(r'conversations', views.ConversationViewSet, basename='conversations')
 
 urlpatterns = [
     path('register/', views.UserRegistrationView.as_view(), name='register'),
