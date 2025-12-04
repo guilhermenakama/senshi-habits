@@ -324,7 +324,8 @@ class ProgressComparisonView(APIView):
 
 class BodyMetricsView(APIView):
     """
-    Retorna evolução de métricas corporais ao longo do tempo
+    GET: Retorna evolução de métricas corporais ao longo do tempo
+    POST: Cria nova medição corporal
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -373,3 +374,69 @@ class BodyMetricsView(APIView):
             },
             'latest': data[-1] if data else None
         })
+
+    def post(self, request):
+        """
+        Cria uma nova medição corporal
+        """
+        user = request.user
+
+        # Validar campos obrigatórios
+        weight_kg = request.data.get('weight_kg')
+        if not weight_kg:
+            return Response({'error': 'Peso é obrigatório'}, status=400)
+
+        try:
+            weight_kg = float(weight_kg)
+        except ValueError:
+            return Response({'error': 'Peso inválido'}, status=400)
+
+        # Campos opcionais
+        muscle_mass_kg = request.data.get('muscle_mass_kg')
+        fat_mass_percentage = request.data.get('fat_mass_percentage')
+        date = request.data.get('date')
+        notes = request.data.get('notes', '')
+
+        # Converter campos opcionais
+        if muscle_mass_kg:
+            try:
+                muscle_mass_kg = float(muscle_mass_kg)
+            except ValueError:
+                return Response({'error': 'Massa magra inválida'}, status=400)
+
+        if fat_mass_percentage:
+            try:
+                fat_mass_percentage = float(fat_mass_percentage)
+            except ValueError:
+                return Response({'error': 'Percentual de gordura inválido'}, status=400)
+
+        # Usar data de hoje se não fornecida
+        if not date:
+            from datetime import date as date_cls
+            date = date_cls.today()
+
+        # Criar medição
+        measurement = BodyMeasurement.objects.create(
+            user=user,
+            date=date,
+            weight_kg=weight_kg,
+            muscle_mass_kg=muscle_mass_kg,
+            fat_mass_percentage=fat_mass_percentage,
+            notes=notes
+        )
+
+        # Calcular porcentagem de massa magra
+        muscle_mass_percentage = None
+        if measurement.muscle_mass_kg and measurement.weight_kg:
+            muscle_mass_percentage = round((measurement.muscle_mass_kg / measurement.weight_kg) * 100, 1)
+
+        return Response({
+            'id': measurement.id,
+            'date': measurement.date.isoformat(),
+            'weight_kg': measurement.weight_kg,
+            'muscle_mass_kg': measurement.muscle_mass_kg,
+            'fat_percentage': measurement.fat_mass_percentage,
+            'muscle_mass_percentage': muscle_mass_percentage,
+            'notes': measurement.notes,
+            'message': 'Medição cadastrada com sucesso!'
+        }, status=201)

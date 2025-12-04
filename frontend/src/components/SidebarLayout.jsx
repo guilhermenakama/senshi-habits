@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, CalendarCheck, Dumbbell, LogOut, ListChecks, Brain, User, Menu, X } from 'lucide-react';
+import { LayoutDashboard, CalendarCheck, Dumbbell, LogOut, ListChecks, Brain, User, Menu, X, Scale } from 'lucide-react';
 
 const SidebarLayout = ({ onLogout }) => {
   const location = useLocation();
@@ -63,6 +63,9 @@ const SidebarLayout = ({ onLogout }) => {
           </NavLink>
           <NavLink to="/training" icon={Dumbbell}>
             Workout Log
+          </NavLink>
+          <NavLink to="/body-metrics" icon={Scale}>
+            Body Metrics
           </NavLink>
           <NavLink to="/ai-coach" icon={Brain}>
             AI Sensei

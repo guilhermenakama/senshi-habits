@@ -11,6 +11,7 @@ import DailyLog from './pages/DailyLog';
 import HabitGoals from './pages/HabitGoals';
 import AICoach from './pages/AICoach';
 import BehavioralProfile from './pages/BehavioralProfile';
+import BodyMetrics from './pages/BodyMetrics';
 
 // API URL baseada no ambiente
 const API_URL = window.location.hostname === 'localhost'
@@ -211,6 +212,7 @@ function App() {
           <Route path="training" element={<Training token={token} />} />
           <Route path="journal" element={<Journal token={token} />} />
           <Route path="/habits" element={<HabitGoals token={token} />} />
+          <Route path="body-metrics" element={<BodyMetrics token={token} />} />
           <Route path="ai-coach" element={<AICoach token={token} />} />
           <Route path="profile/behavioral" element={<BehavioralProfile token={token} />} />
           <Route path="*" element={<Navigate to="/" />} />
