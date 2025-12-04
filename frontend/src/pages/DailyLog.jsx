@@ -60,10 +60,16 @@ const DailyLog = ({ token }) => {
 
   // Auto-avaliação (Mental, Física, Emocional)
   const [wellbeingText, setWellbeingText] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  const [isRecordingWellbeing, setIsRecordingWellbeing] = useState(false);
+  const [isTranscribingWellbeing, setIsTranscribingWellbeing] = useState(false);
+  const mediaRecorderWellbeingRef = useRef(null);
+  const audioChunksWellbeingRef = useRef([]);
+
+  // Gravação de áudio para o Diário do Dia
+  const [isRecordingJournal, setIsRecordingJournal] = useState(false);
+  const [isTranscribingJournal, setIsTranscribingJournal] = useState(false);
+  const mediaRecorderJournalRef = useRef(null);
+  const audioChunksJournalRef = useRef([]);
 
   useEffect(() => {
     fetchTemplates();
@@ -100,42 +106,81 @@ const DailyLog = ({ token }) => {
     // Por enquanto, vamos começar limpo
   };
 
-  // Funções de gravação de áudio
-  const startRecording = async () => {
+  // Funções de gravação de áudio - Auto-avaliação
+  const startRecordingWellbeing = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = [];
+      mediaRecorderWellbeingRef.current = new MediaRecorder(stream);
+      audioChunksWellbeingRef.current = [];
 
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+      mediaRecorderWellbeingRef.current.ondataavailable = (event) => {
+        audioChunksWellbeingRef.current.push(event.data);
       };
 
-      mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await transcribeAudio(audioBlob);
+      mediaRecorderWellbeingRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksWellbeingRef.current, { type: 'audio/webm' });
+        await transcribeAudio(audioBlob, 'wellbeing');
 
         // Parar todas as tracks do stream
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
+      mediaRecorderWellbeingRef.current.start();
+      setIsRecordingWellbeing(true);
     } catch (error) {
       console.error('Erro ao acessar microfone:', error);
       alert('Erro ao acessar o microfone. Verifique as permissões do navegador.');
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+  const stopRecordingWellbeing = () => {
+    if (mediaRecorderWellbeingRef.current && isRecordingWellbeing) {
+      mediaRecorderWellbeingRef.current.stop();
+      setIsRecordingWellbeing(false);
     }
   };
 
-  const transcribeAudio = async (audioBlob) => {
-    setIsTranscribing(true);
+  // Funções de gravação de áudio - Diário do Dia
+  const startRecordingJournal = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderJournalRef.current = new MediaRecorder(stream);
+      audioChunksJournalRef.current = [];
+
+      mediaRecorderJournalRef.current.ondataavailable = (event) => {
+        audioChunksJournalRef.current.push(event.data);
+      };
+
+      mediaRecorderJournalRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksJournalRef.current, { type: 'audio/webm' });
+        await transcribeAudio(audioBlob, 'journal');
+
+        // Parar todas as tracks do stream
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderJournalRef.current.start();
+      setIsRecordingJournal(true);
+    } catch (error) {
+      console.error('Erro ao acessar microfone:', error);
+      alert('Erro ao acessar o microfone. Verifique as permissões do navegador.');
+    }
+  };
+
+  const stopRecordingJournal = () => {
+    if (mediaRecorderJournalRef.current && isRecordingJournal) {
+      mediaRecorderJournalRef.current.stop();
+      setIsRecordingJournal(false);
+    }
+  };
+
+  // Função de transcrição (usada por ambos)
+  const transcribeAudio = async (audioBlob, type) => {
+    if (type === 'wellbeing') {
+      setIsTranscribingWellbeing(true);
+    } else {
+      setIsTranscribingJournal(true);
+    }
 
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
@@ -150,13 +195,24 @@ const DailyLog = ({ token }) => {
       const data = await res.json();
 
       if (data.transcription) {
-        setWellbeingText(prev => prev ? `${prev}\n\n${data.transcription}` : data.transcription);
+        if (type === 'wellbeing') {
+          setWellbeingText(prev => prev ? `${prev}\n\n${data.transcription}` : data.transcription);
+        } else {
+          setJournal(prev => ({
+            ...prev,
+            content: prev.content ? `${prev.content}\n\n${data.transcription}` : data.transcription
+          }));
+        }
       }
     } catch (error) {
       console.error('Erro ao transcrever áudio:', error);
       alert('Erro ao transcrever o áudio. Tente novamente.');
     } finally {
-      setIsTranscribing(false);
+      if (type === 'wellbeing') {
+        setIsTranscribingWellbeing(false);
+      } else {
+        setIsTranscribingJournal(false);
+      }
     }
   };
 
@@ -742,10 +798,10 @@ Você pode escrever ou gravar um áudio! 🎤"
 
                 {/* Botão de gravar áudio */}
                 <div className="flex items-center gap-3">
-                  {!isRecording ? (
+                  {!isRecordingWellbeing ? (
                     <button
-                      onClick={startRecording}
-                      disabled={isTranscribing}
+                      onClick={startRecordingWellbeing}
+                      disabled={isTranscribingWellbeing}
                       className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
                     >
                       <Mic className="w-5 h-5" />
@@ -753,7 +809,7 @@ Você pode escrever ou gravar um áudio! 🎤"
                     </button>
                   ) : (
                     <button
-                      onClick={stopRecording}
+                      onClick={stopRecordingWellbeing}
                       className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold rounded-xl hover:shadow-lg transition-all animate-pulse"
                     >
                       <StopCircle className="w-5 h-5" />
@@ -761,14 +817,14 @@ Você pode escrever ou gravar um áudio! 🎤"
                     </button>
                   )}
 
-                  {isTranscribing && (
+                  {isTranscribingWellbeing && (
                     <div className="flex items-center gap-2 text-indigo-600">
                       <Loader2 className="w-5 h-5 animate-spin" />
                       <span className="text-sm font-semibold">Transcrevendo...</span>
                     </div>
                   )}
 
-                  {isRecording && (
+                  {isRecordingWellbeing && (
                     <div className="flex items-center gap-2 text-red-600 animate-pulse">
                       <div className="w-3 h-3 bg-red-600 rounded-full"></div>
                       <span className="text-sm font-semibold">Gravando...</span>
@@ -788,9 +844,50 @@ Você pode escrever ou gravar um áudio! 🎤"
               <textarea
                 value={journal.content}
                 onChange={(e) => setJournal({ ...journal, content: e.target.value })}
-                placeholder="Como foi seu dia? O que você aprendeu? Reflexões gerais... ✨"
+                placeholder="Como foi seu dia? O que você aprendeu? Reflexões gerais... ✨
+Você também pode gravar um áudio! 🎤"
                 className="w-full h-32 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none resize-none"
               />
+
+              {/* Botão de gravar áudio para o diário */}
+              <div className="flex items-center gap-3 mt-3">
+                {!isRecordingJournal ? (
+                  <button
+                    onClick={startRecordingJournal}
+                    disabled={isTranscribingJournal}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    <Mic className="w-5 h-5" />
+                    Gravar Áudio
+                  </button>
+                ) : (
+                  <button
+                    onClick={stopRecordingJournal}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-700 text-white font-semibold rounded-xl hover:shadow-lg transition-all animate-pulse"
+                  >
+                    <StopCircle className="w-5 h-5" />
+                    Parar Gravação
+                  </button>
+                )}
+
+                {isTranscribingJournal && (
+                  <div className="flex items-center gap-2 text-purple-600">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="text-sm font-semibold">Transcrevendo...</span>
+                  </div>
+                )}
+
+                {isRecordingJournal && (
+                  <div className="flex items-center gap-2 text-purple-600 animate-pulse">
+                    <div className="w-3 h-3 bg-purple-600 rounded-full"></div>
+                    <span className="text-sm font-semibold">Gravando...</span>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-xs text-gray-500 italic mt-2">
+                💡 Dica: Fale livremente sobre seu dia. A IA vai transcrever e adicionar ao texto acima.
+              </p>
             </div>
           </div>
         </div>
