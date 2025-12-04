@@ -23,11 +23,11 @@ echo -e "${YELLOW}5. Rebuilding frontend (nginx)...${NC}"
 docker build -t senshi-habits-frontend:latest -f nginx/Dockerfile .
 
 echo -e "${YELLOW}6. Atualizando serviço frontend...${NC}"
-docker service update --force --image senshi-habits-frontend:latest senshi-habits_frontend
+docker service update --force --image senshi-habits-frontend:latest senshi-habits_nginx
 
 echo -e "${YELLOW}7. Verificando status dos serviços...${NC}"
 docker service ps senshi-habits_backend --no-trunc
-docker service ps senshi-habits_frontend --no-trunc
+docker service ps senshi-habits_nginx --no-trunc
 
 echo -e "${GREEN}✅ Deploy concluído!${NC}"
 echo ""
