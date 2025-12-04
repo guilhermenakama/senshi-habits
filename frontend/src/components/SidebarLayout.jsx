@@ -1,84 +1,105 @@
+import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, CalendarCheck, Dumbbell, LogOut, ListChecks, Brain, User } from 'lucide-react';
+import { LayoutDashboard, CalendarCheck, Dumbbell, LogOut, ListChecks, Brain, User, Menu, X } from 'lucide-react';
 
 const SidebarLayout = ({ onLogout }) => {
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Função simples para deixar o botão azul quando estiver selecionado
-  const getLinkStyle = (path) => {
-    // Se o endereço atual for igual ao do botão, fica ativo
-    const isActive = location.pathname === path;
-    
-    return {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '12px 15px',
-      color: isActive ? '#fff' : '#aaa',       // Texto Branco se ativo, Cinza se não
-      background: isActive ? '#007bff' : 'transparent', // Fundo Azul se ativo
-      textDecoration: 'none',
-      borderRadius: '8px',
-      marginBottom: '8px',
-      fontWeight: isActive ? 'bold' : 'normal',
-      cursor: 'pointer'
-    };
-  };
+  const isActive = (path) => location.pathname === path;
+
+  const NavLink = ({ to, icon: Icon, children }) => (
+    <Link
+      to={to}
+      onClick={() => setSidebarOpen(false)}
+      className={`flex items-center px-4 py-3 rounded-lg mb-2 transition-all ${
+        isActive(to)
+          ? 'bg-blue-600 text-white font-semibold'
+          : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+      }`}
+    >
+      <Icon size={20} className="mr-3" />
+      {children}
+    </Link>
+  );
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
-      
-      {/* --- MENU LATERAL ESCURO --- */}
-      <aside style={{ width: '250px', background: '#1e1e2d', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-        <h2 style={{ color: 'white', marginBottom: '40px' }}>⚔️ Senshi</h2>
-        
-        <nav style={{ flex: 1 }}>
-          
-            {/* 1. DAILY LOG */}
-            <Link to="/" style={getLinkStyle('/')}>
-                <CalendarCheck size={20} style={{ marginRight: '10px' }} /> 
-                Daily Journal
-            </Link>
+    <div className="flex h-screen w-screen overflow-hidden">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-            {/* 2. DASHBOARD */}
-            <Link to="/dashboard" style={getLinkStyle('/dashboard')}>
-                <LayoutDashboard size={20} style={{ marginRight: '10px' }} /> 
-                Dashboard
-            </Link>
+      {/* Sidebar */}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-gray-900 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } flex flex-col`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-800">
+          <h2 className="text-white text-xl font-bold">⚔️ Senshi</h2>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden text-gray-400 hover:text-white"
+          >
+            <X size={24} />
+          </button>
+        </div>
 
-            {/* NOVO LINK: GERENCIAR HÁBITOS */}
-            <Link to="/habits" style={getLinkStyle('/habits')}>
-                <ListChecks size={20} style={{ marginRight: '10px' }} /> 
-                Habit Goals
-            </Link>
-
-            {/* 3. GERENCIADOR DE TREINOS */}
-            <Link to="/training" style={getLinkStyle('/training')}>
-                <Dumbbell size={20} style={{ marginRight: '10px' }} />
-                Workout Log
-            </Link>
-
-            {/* 4. AI SENSEI */}
-            <Link to="/ai-coach" style={getLinkStyle('/ai-coach')}>
-                <Brain size={20} style={{ marginRight: '10px' }} />
-                AI Sensei
-            </Link>
-
-            {/* 5. MY PERSONALITY */}
-            <Link to="/profile/behavioral" style={getLinkStyle('/profile/behavioral')}>
-                <User size={20} style={{ marginRight: '10px' }} />
-                My Personality
-            </Link>
-
+        {/* Navigation */}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <NavLink to="/" icon={CalendarCheck}>
+            Daily Journal
+          </NavLink>
+          <NavLink to="/dashboard" icon={LayoutDashboard}>
+            Dashboard
+          </NavLink>
+          <NavLink to="/habits" icon={ListChecks}>
+            Habit Goals
+          </NavLink>
+          <NavLink to="/training" icon={Dumbbell}>
+            Workout Log
+          </NavLink>
+          <NavLink to="/ai-coach" icon={Brain}>
+            AI Sensei
+          </NavLink>
+          <NavLink to="/profile/behavioral" icon={User}>
+            My Personality
+          </NavLink>
         </nav>
 
-        {/* BOTÃO SAIR */}
-        <button onClick={onLogout} style={{ display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer', padding: '10px', fontSize: '1em' }}>
-          <LogOut size={20} style={{ marginRight: '10px' }} /> Sair
+        {/* Logout Button */}
+        <button
+          onClick={onLogout}
+          className="flex items-center px-4 py-3 m-4 text-red-500 hover:bg-red-500 hover:bg-opacity-10 rounded-lg transition-all"
+        >
+          <LogOut size={20} className="mr-3" />
+          Sair
         </button>
       </aside>
 
-      {/* --- ONDE A PÁGINA CARREGA (Direita) --- */}
-      <main style={{ flex: 1, padding: '40px', overflowY: 'auto', background: '#f4f6f9' }}>
-        <Outlet />
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col w-full overflow-hidden">
+        {/* Mobile Header */}
+        <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-700 hover:text-gray-900"
+          >
+            <Menu size={24} />
+          </button>
+          <h1 className="text-lg font-bold text-gray-900">⚔️ Senshi</h1>
+          <div className="w-6" /> {/* Spacer for alignment */}
+        </header>
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

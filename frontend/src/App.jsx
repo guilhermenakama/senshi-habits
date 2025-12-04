@@ -97,36 +97,101 @@ function App() {
   // --- TELA DE LOGIN/REGISTRO (Se não tiver token) ---
   if (!token) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f5', padding: '20px' }}>
-        <div style={{ background: 'white', padding: '40px', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>
+      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
+        <div className="bg-white p-6 sm:p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-gray-800">
             {isRegistering ? '📝 Criar Conta' : '🔐 Senshi Login'}
           </h2>
 
           {!isRegistering ? (
-            <form onSubmit={handleLogin}>
-              <input type="text" placeholder="Email ou Usuário" value={username} onChange={e => setUsername(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px', border: '1px solid #ddd' }} required />
-              <input type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '5px', border: '1px solid #ddd' }} required />
-              {error && <p style={{ color: 'red', marginBottom: '10px', fontSize: '14px' }}>{error}</p>}
-              <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Email ou Usuário"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                required
+              />
+              <input
+                type="password"
+                placeholder="Senha"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                required
+              />
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 {loading ? "Entrando..." : "Entrar"}
               </button>
-              <p style={{ textAlign: 'center', marginTop: '20px', color: '#666' }}>
-                Não tem uma conta? <button type="button" onClick={() => { setIsRegistering(true); setError(''); }} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>Cadastre-se</button>
+              <p className="text-center text-gray-600 text-sm sm:text-base">
+                Não tem uma conta?
+                <button
+                  type="button"
+                  onClick={() => { setIsRegistering(true); setError(''); }}
+                  className="ml-1 text-blue-600 hover:underline font-semibold"
+                >
+                  Cadastre-se
+                </button>
               </p>
             </form>
           ) : (
-            <form onSubmit={handleRegister}>
-              <input type="text" placeholder="Nome Completo" value={fullName} onChange={e => setFullName(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px', border: '1px solid #ddd' }} required />
-              <input type="email" placeholder="email@exemplo.com" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px', border: '1px solid #ddd' }} required />
-              <input type="password" placeholder="Senha (mínimo 8 caracteres)" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px', border: '1px solid #ddd' }} required minLength={8} />
-              <input type="password" placeholder="Confirmar Senha" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '5px', border: '1px solid #ddd' }} required />
-              {error && <p style={{ color: 'red', marginBottom: '10px', fontSize: '14px' }}>{error}</p>}
-              <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>
+            <form onSubmit={handleRegister} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Nome Completo"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+                required
+              />
+              <input
+                type="email"
+                placeholder="email@exemplo.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+                required
+              />
+              <input
+                type="password"
+                placeholder="Senha (mínimo 8 caracteres)"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+                required
+                minLength={8}
+              />
+              <input
+                type="password"
+                placeholder="Confirmar Senha"
+                value={passwordConfirm}
+                onChange={e => setPasswordConfirm(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+                required
+              />
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 {loading ? "Cadastrando..." : "Criar Conta"}
               </button>
-              <p style={{ textAlign: 'center', marginTop: '20px', color: '#666' }}>
-                Já tem uma conta? <button type="button" onClick={() => { setIsRegistering(false); setError(''); }} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>Fazer Login</button>
+              <p className="text-center text-gray-600 text-sm sm:text-base">
+                Já tem uma conta?
+                <button
+                  type="button"
+                  onClick={() => { setIsRegistering(false); setError(''); }}
+                  className="ml-1 text-blue-600 hover:underline font-semibold"
+                >
+                  Fazer Login
+                </button>
               </p>
             </form>
           )}
