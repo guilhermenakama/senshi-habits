@@ -117,7 +117,7 @@ class TranscribeAudioView(APIView):
 
                 # Usar o modelo Gemini Pro para transcrição de áudio
                 # (Flash não suporta áudio, mas Pro sim)
-                model = genai.GenerativeModel('gemini-1.5-pro-latest')
+                model = genai.GenerativeModel('gemini-1.5-pro')
 
                 # Prompt para transcrição
                 prompt = """
