@@ -102,8 +102,21 @@ class TranscribeAudioView(APIView):
             }, status=400)
 
         try:
-            # Configurar Gemini
-            genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+            # Configurar Gemini com Service Account
+            from google.oauth2 import service_account
+            import pathlib
+
+            credentials_path = pathlib.Path(__file__).parent.parent / 'google_credentials.json'
+
+            if credentials_path.exists():
+                credentials = service_account.Credentials.from_service_account_file(
+                    str(credentials_path),
+                    scopes=['https://www.googleapis.com/auth/generative-language']
+                )
+                genai.configure(credentials=credentials)
+            else:
+                # Fallback para API key se não houver service account
+                genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 
             # Salvar temporariamente o áudio
             with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_audio:
