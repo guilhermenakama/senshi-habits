@@ -46,10 +46,8 @@ const DailyLog = ({ token }) => {
   const [nutritionResult, setNutritionResult] = useState("");
   const [analyzingNutrition, setAnalyzingNutrition] = useState(false);
 
-  // Treino - Modularizado por tipo
-  const [warmupData, setWarmupData] = useState([]);
-  const [strengthData, setStrengthData] = useState([]);
-  const [cardioData, setCardioData] = useState([]);
+  // Treino - Array único com campo workout_type por exercício
+  const [workoutData, setWorkoutData] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [exercisesList, setExercisesList] = useState([]);
   const [showTemplateSelect, setShowTemplateSelect] = useState({
@@ -258,78 +256,53 @@ const DailyLog = ({ token }) => {
     }
   };
 
-  const getWorkoutDataByType = (type) => {
-    switch(type) {
-      case 'warmup': return warmupData;
-      case 'strength': return strengthData;
-      case 'cardio': return cardioData;
-      default: return [];
-    }
-  };
-
-  const setWorkoutDataByType = (type, data) => {
-    switch(type) {
-      case 'warmup': setWarmupData(data); break;
-      case 'strength': setStrengthData(data); break;
-      case 'cardio': setCardioData(data); break;
-    }
-  };
-
   const handleLoadTemplate = (templateId, workoutType) => {
-    console.log('Loading template:', templateId, workoutType, templates);
     const template = templates.find(t => t.id === parseInt(templateId));
     if (template) {
-      console.log('Template found:', template);
       try {
         const data = JSON.parse(template.exercises_data);
-        console.log('Parsed exercises:', data);
-        // Ensure all exercises have the completed field
-        const exercisesWithCompleted = data.map(ex => ({
+        // Adiciona os exercícios do template com o workout_type correto
+        const exercisesWithType = data.map(ex => ({
           ...ex,
+          workout_type: workoutType,
           completed: false
         }));
-        setWorkoutDataByType(workoutType, exercisesWithCompleted);
+        setWorkoutData([...workoutData, ...exercisesWithType]);
         setShowTemplateSelect({ ...showTemplateSelect, [workoutType]: false });
-        console.log('Template loaded successfully:', exercisesWithCompleted);
       } catch (error) {
         console.error('Error parsing template exercises:', error);
         alert('Erro ao carregar template. Tente novamente.');
       }
-    } else {
-      console.error('Template not found with ID:', templateId);
     }
   };
 
   const addExercise = (workoutType) => {
-    const currentData = getWorkoutDataByType(workoutType);
-    setWorkoutDataByType(workoutType, [...currentData, {
+    setWorkoutData([...workoutData, {
       exercise_name: '',
       sets: '',
       reps: '',
       weight: '',
       time: '',
       distance: '',
+      workout_type: workoutType,
       completed: false
     }]);
   };
 
-  const updateExercise = (workoutType, index, field, value) => {
-    const currentData = getWorkoutDataByType(workoutType);
-    const newData = [...currentData];
+  const updateExercise = (index, field, value) => {
+    const newData = [...workoutData];
     newData[index] = { ...newData[index], [field]: value };
-    setWorkoutDataByType(workoutType, newData);
+    setWorkoutData(newData);
   };
 
-  const removeExercise = (workoutType, index) => {
-    const currentData = getWorkoutDataByType(workoutType);
-    setWorkoutDataByType(workoutType, currentData.filter((_, i) => i !== index));
+  const removeExercise = (index) => {
+    setWorkoutData(workoutData.filter((_, i) => i !== index));
   };
 
-  const toggleExerciseComplete = (workoutType, index) => {
-    const currentData = getWorkoutDataByType(workoutType);
-    const newData = [...currentData];
+  const toggleExerciseComplete = (index) => {
+    const newData = [...workoutData];
     newData[index].completed = !newData[index].completed;
-    setWorkoutDataByType(workoutType, newData);
+    setWorkoutData(newData);
   };
 
   // Autocomplete functions
@@ -348,11 +321,10 @@ const DailyLog = ({ token }) => {
     setShowDropdown({ ...showDropdown, [key]: true });
   };
 
-  const handleExerciseSelect = (workoutType, idx, exerciseName) => {
-    updateExercise(workoutType, idx, 'exercise_name', exerciseName);
-    const key = `${workoutType}_${idx}`;
-    setSearchTerms({ ...searchTerms, [key]: '' });
-    setShowDropdown({ ...showDropdown, [key]: false });
+  const handleExerciseSelect = (idx, exerciseName) => {
+    updateExercise(idx, 'exercise_name', exerciseName);
+    setSearchTerms({ ...searchTerms, [idx]: '' });
+    setShowDropdown({ ...showDropdown, [idx]: false });
   };
 
   // Click outside to close dropdown
@@ -393,29 +365,23 @@ const DailyLog = ({ token }) => {
         ));
       }
 
-      // 2. Salvar treinos (Aquecimento, Força, Cardio)
-      const saveWorkout = async (data, type, title) => {
-        const completedExercises = data.filter(ex => ex.exercise_name && ex.exercise_name.trim());
-        if (completedExercises.length > 0) {
-          await fetch(`${API_URL}/api/tracker/workouts/`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              title: `${title} - ${new Date(date).toLocaleDateString('pt-BR')}`,
-              date_time: new Date(date).toISOString(),
-              exercises_data: JSON.stringify(completedExercises),
-              feeling: journal.mood || 3
-            })
-          });
-        }
-      };
-
-      await saveWorkout(warmupData, 'warmup', 'Aquecimento');
-      await saveWorkout(strengthData, 'strength', 'Treino de Força');
-      await saveWorkout(cardioData, 'cardio', 'Cardio/HIIT');
+      // 2. Salvar treino (todos os exercícios juntos)
+      const completedExercises = workoutData.filter(ex => ex.exercise_name && ex.exercise_name.trim());
+      if (completedExercises.length > 0) {
+        await fetch(`${API_URL}/api/tracker/workouts/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: `Treino - ${new Date(date).toLocaleDateString('pt-BR')}`,
+            date_time: new Date(date).toISOString(),
+            exercises_data: JSON.stringify(completedExercises),
+            feeling: journal.mood || 3
+          })
+        });
+      }
 
       // 3. Salvar journal (incluindo auto-avaliação)
       const fullJournalContent = wellbeingText.trim()
@@ -456,17 +422,20 @@ const DailyLog = ({ token }) => {
     { value: 5, icon: Heart, label: 'Ótimo', color: 'from-purple-500 to-pink-600' },
   ];
 
-  // Função para renderizar cada seção de treino (Aquecimento, Força, Cardio)
-  const renderWorkoutSection = (workoutType, Icon, title, iconColor, borderColor) => {
-    const workoutData = getWorkoutDataByType(workoutType);
+  // Função para renderizar um sub-grupo de treino (Aquecimento, Força ou Cardio)
+  const renderWorkoutSubsection = (workoutType, Icon, title, iconColor) => {
+    const exercisesOfType = workoutData
+      .map((ex, globalIdx) => ({ ...ex, globalIdx }))
+      .filter(ex => ex.workout_type === workoutType);
     const templatesFiltered = templates.filter(t => t.workout_type === workoutType);
 
     return (
-      <div className="bg-white rounded-2xl shadow-xl p-6">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <Icon className={`w-6 h-6 ${iconColor}`} />
-            <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+      <div className="mb-6">
+        {/* Título do sub-grupo */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Icon className={`w-5 h-5 ${iconColor}`} />
+            <h3 className="text-lg font-bold text-gray-800">{title}</h3>
           </div>
 
           {templatesFiltered.length > 0 && (
@@ -475,23 +444,23 @@ const DailyLog = ({ token }) => {
                 ...showTemplateSelect,
                 [workoutType]: !showTemplateSelect[workoutType]
               })}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-semibold"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-semibold"
             >
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-3 h-3" />
               Templates
             </button>
           )}
         </div>
 
+        {/* Templates dropdown */}
         {showTemplateSelect[workoutType] && templatesFiltered.length > 0 && (
-          <div className={`mb-4 p-4 bg-${borderColor}-50 rounded-xl border-2 border-${borderColor}-200`}>
-            <p className="text-sm font-semibold text-gray-700 mb-2">Selecione um template:</p>
+          <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <div className="grid grid-cols-2 gap-2">
               {templatesFiltered.map(t => (
                 <button
                   key={t.id}
                   onClick={() => handleLoadTemplate(t.id, workoutType)}
-                  className={`px-4 py-2 bg-white border-2 border-gray-200 rounded-lg hover:border-${borderColor}-400 hover:bg-${borderColor}-50 transition-colors text-sm font-medium`}
+                  className="px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-sm font-medium"
                 >
                   {t.name}
                 </button>
@@ -500,138 +469,136 @@ const DailyLog = ({ token }) => {
           </div>
         )}
 
-        <div className="space-y-3">
-          {workoutData.map((exercise, idx) => {
-            const key = `${workoutType}_${idx}`;
-            return (
-              <div
-                key={idx}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  exercise.completed
-                    ? 'bg-green-50 border-green-300'
-                    : 'bg-gray-50 border-gray-200'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <button
-                    onClick={() => toggleExerciseComplete(workoutType, idx)}
-                    className={`mt-1 w-6 h-6 rounded-full border-2 flex-shrink-0 ${
-                      exercise.completed
-                        ? 'bg-green-500 border-green-500'
-                        : 'border-gray-300 hover:border-green-400'
-                    }`}
-                  >
-                    {exercise.completed && <CheckCircle2 className="w-5 h-5 text-white" />}
-                  </button>
+        {/* Lista de exercícios */}
+        <div className="space-y-2">
+          {exercisesOfType.map(({ globalIdx, ...exercise }) => (
+            <div
+              key={globalIdx}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                exercise.completed
+                  ? 'bg-green-50 border-green-300'
+                  : 'bg-gray-50 border-gray-200'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <button
+                  onClick={() => toggleExerciseComplete(globalIdx)}
+                  className={`mt-1 w-5 h-5 rounded-full border-2 flex-shrink-0 ${
+                    exercise.completed
+                      ? 'bg-green-500 border-green-500'
+                      : 'border-gray-300 hover:border-green-400'
+                  }`}
+                >
+                  {exercise.completed && <CheckCircle2 className="w-4 h-4 text-white" />}
+                </button>
 
-                  <div className="flex-1 space-y-2">
-                    {/* Autocomplete de Exercício */}
-                    <div className="relative" ref={el => searchRefs.current[key] = el}>
-                      {exercise.exercise_name ? (
-                        <div className="flex items-center gap-2">
+                <div className="flex-1 space-y-2">
+                  {/* Autocomplete de Exercício */}
+                  <div className="relative" ref={el => searchRefs.current[globalIdx] = el}>
+                    {exercise.exercise_name ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={exercise.exercise_name}
+                          readOnly
+                          className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg bg-white font-semibold text-sm"
+                        />
+                        <button
+                          onClick={() => updateExercise(globalIdx, 'exercise_name', '')}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Trocar exercício"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                           <input
                             type="text"
-                            value={exercise.exercise_name}
-                            readOnly
-                            className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg bg-white font-semibold"
+                            placeholder="Buscar exercício..."
+                            value={searchTerms[globalIdx] || ''}
+                            onChange={(e) => handleExerciseSearchChange(globalIdx, e.target.value)}
+                            onFocus={() => setShowDropdown({ ...showDropdown, [globalIdx]: true })}
+                            className="w-full pl-9 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none font-semibold text-sm"
                           />
-                          <button
-                            onClick={() => updateExercise(workoutType, idx, 'exercise_name', '')}
-                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                            title="Trocar exercício"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
                         </div>
-                      ) : (
-                        <>
-                          <div className="relative">
-                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                            <input
-                              type="text"
-                              placeholder="Buscar exercício..."
-                              value={searchTerms[key] || ''}
-                              onChange={(e) => handleExerciseSearchChange(key, e.target.value)}
-                              onFocus={() => setShowDropdown({ ...showDropdown, [key]: true })}
-                              className="w-full pl-9 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none font-semibold"
-                            />
+
+                        {showDropdown[globalIdx] && (
+                          <div className="absolute z-20 w-full mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                            {getFilteredExercises(globalIdx).length === 0 ? (
+                              <div className="p-3 text-center text-gray-500 text-sm">
+                                Nenhum exercício encontrado
+                              </div>
+                            ) : (
+                              getFilteredExercises(globalIdx).map(ex => (
+                                <button
+                                  key={ex.id}
+                                  onClick={() => handleExerciseSelect(globalIdx, ex.name)}
+                                  className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                                >
+                                  <div className="font-semibold text-gray-900 text-sm">{ex.name}</div>
+                                  {ex.muscle_group && (
+                                    <div className="text-xs text-gray-500">🎯 {ex.muscle_group}</div>
+                                  )}
+                                </button>
+                              ))
+                            )}
                           </div>
-
-                          {showDropdown[key] && (
-                            <div className="absolute z-20 w-full mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
-                              {getFilteredExercises(key).length === 0 ? (
-                                <div className="p-3 text-center text-gray-500 text-sm">
-                                  Nenhum exercício encontrado
-                                </div>
-                              ) : (
-                                getFilteredExercises(key).map(ex => (
-                                  <button
-                                    key={ex.id}
-                                    onClick={() => handleExerciseSelect(workoutType, idx, ex.name)}
-                                    className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
-                                  >
-                                    <div className="font-semibold text-gray-900 text-sm">{ex.name}</div>
-                                    {ex.muscle_group && (
-                                      <div className="text-xs text-gray-500">🎯 {ex.muscle_group}</div>
-                                    )}
-                                  </button>
-                                ))
-                              )}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-2">
-                      <input
-                        type="number"
-                        value={exercise.sets}
-                        onChange={(e) => updateExercise(workoutType, idx, 'sets', e.target.value)}
-                        placeholder="Sets"
-                        className="px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-center text-sm"
-                      />
-                      <input
-                        type="number"
-                        value={exercise.reps}
-                        onChange={(e) => updateExercise(workoutType, idx, 'reps', e.target.value)}
-                        placeholder="Reps"
-                        className="px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-center text-sm"
-                      />
-                      <input
-                        type="number"
-                        value={exercise.weight}
-                        onChange={(e) => updateExercise(workoutType, idx, 'weight', e.target.value)}
-                        placeholder="Kg"
-                        className="px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-center text-sm"
-                      />
-                      <input
-                        type="text"
-                        value={exercise.time}
-                        onChange={(e) => updateExercise(workoutType, idx, 'time', e.target.value)}
-                        placeholder="Tempo"
-                        className="px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-center text-sm"
-                      />
-                    </div>
+                        )}
+                      </>
+                    )}
                   </div>
 
-                  <button
-                    onClick={() => removeExercise(workoutType, idx)}
-                    className="mt-1 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="grid grid-cols-4 gap-2">
+                    <input
+                      type="number"
+                      value={exercise.sets}
+                      onChange={(e) => updateExercise(globalIdx, 'sets', e.target.value)}
+                      placeholder="Sets"
+                      className="px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-center text-sm"
+                    />
+                    <input
+                      type="number"
+                      value={exercise.reps}
+                      onChange={(e) => updateExercise(globalIdx, 'reps', e.target.value)}
+                      placeholder="Reps"
+                      className="px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-center text-sm"
+                    />
+                    <input
+                      type="number"
+                      value={exercise.weight}
+                      onChange={(e) => updateExercise(globalIdx, 'weight', e.target.value)}
+                      placeholder="Kg"
+                      className="px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-center text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={exercise.time}
+                      onChange={(e) => updateExercise(globalIdx, 'time', e.target.value)}
+                      placeholder="Tempo"
+                      className="px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-center text-sm"
+                    />
+                  </div>
                 </div>
+
+                <button
+                  onClick={() => removeExercise(globalIdx)}
+                  className="mt-1 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            );
-          })}
+            </div>
+          ))}
 
           <button
             onClick={() => addExercise(workoutType)}
-            className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center gap-2 font-semibold text-gray-600"
+            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center gap-2 font-semibold text-gray-600 text-sm"
           >
-            <Plus className="w-5 h-5" />
-            Adicionar Exercício
+            <Plus className="w-4 h-4" />
+            Adicionar
           </button>
         </div>
       </div>
@@ -793,15 +760,22 @@ const DailyLog = ({ token }) => {
           </div>
         </div>
 
-        {/* Treino Modularizado em 3 seções */}
-        {/* 1. Aquecimento */}
-        {renderWorkoutSection('warmup', Flame, 'Aquecimento', 'text-orange-600', 'orange')}
+        {/* Treino Unificado com Sub-seções */}
+        <div className="bg-white rounded-2xl shadow-xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Dumbbell className="w-6 h-6 text-blue-600" />
+            <h2 className="text-2xl font-bold text-gray-900">Treino</h2>
+          </div>
 
-        {/* 2. Treino de Força */}
-        {renderWorkoutSection('strength', Dumbbell, 'Treino de Força', 'text-blue-600', 'blue')}
+          {/* Sub-seção: Aquecimento */}
+          {renderWorkoutSubsection('warmup', Flame, 'Aquecimento', 'text-orange-600')}
 
-        {/* 3. Cardio/HIIT */}
-        {renderWorkoutSection('cardio', Zap, 'Cardio / HIIT', 'text-purple-600', 'purple')}
+          {/* Sub-seção: Treino de Força */}
+          {renderWorkoutSubsection('strength', Dumbbell, 'Treino de Força', 'text-blue-600')}
+
+          {/* Sub-seção: Cardio/HIIT */}
+          {renderWorkoutSubsection('cardio', Zap, 'Cardio / HIIT', 'text-purple-600')}
+        </div>
 
         {/* Journal & Mood */}
         <div className="bg-white rounded-2xl shadow-xl p-6">
