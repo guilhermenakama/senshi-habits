@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Scale, TrendingUp, TrendingDown, Calendar, Activity, Ruler, Save, Plus } from 'lucide-react';
+import { Scale, TrendingUp, TrendingDown, Calendar, Activity, Ruler, Save, Plus, Zap } from 'lucide-react';
 
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://127.0.0.1:8000'
@@ -71,7 +71,7 @@ const BodyMetrics = ({ token }) => {
           date: new Date().toISOString().split('T')[0],
           notes: ''
         });
-        fetchMetrics(); // Recarregar dados
+        fetchMetrics();
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
         alert(data.error || 'Erro ao salvar medição');
@@ -126,7 +126,6 @@ const BodyMetrics = ({ token }) => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Peso */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <Scale className="inline w-4 h-4 mr-1" />
@@ -143,7 +142,6 @@ const BodyMetrics = ({ token }) => {
                   />
                 </div>
 
-                {/* Massa Magra */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <Ruler className="inline w-4 h-4 mr-1" />
@@ -159,7 +157,6 @@ const BodyMetrics = ({ token }) => {
                   />
                 </div>
 
-                {/* Percentual de Gordura */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <Activity className="inline w-4 h-4 mr-1" />
@@ -175,7 +172,6 @@ const BodyMetrics = ({ token }) => {
                   />
                 </div>
 
-                {/* Data */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <Calendar className="inline w-4 h-4 mr-1" />
@@ -190,7 +186,6 @@ const BodyMetrics = ({ token }) => {
                 </div>
               </div>
 
-              {/* Notas */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Notas (opcional)
@@ -218,7 +213,7 @@ const BodyMetrics = ({ token }) => {
 
         {/* Latest Metrics Cards */}
         {latest && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6 mb-8">
             {/* Peso */}
             <div className="bg-white rounded-3xl shadow-xl p-6 border-2 border-purple-100">
               <div className="flex items-center justify-between mb-4">
@@ -275,6 +270,38 @@ const BodyMetrics = ({ token }) => {
               </div>
             )}
 
+            {/* IMC */}
+            {latest.bmi && (
+              <div className="bg-white rounded-3xl shadow-xl p-6 border-2 border-green-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl">
+                    <Activity className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-green-600">IMC</span>
+                </div>
+                <p className="text-4xl font-bold text-gray-900 mb-1">{latest.bmi}</p>
+                <p className="text-sm text-gray-600">
+                  {latest.bmi < 18.5 ? 'Abaixo do peso' :
+                   latest.bmi < 25 ? 'Peso normal' :
+                   latest.bmi < 30 ? 'Sobrepeso' : 'Obesidade'}
+                </p>
+              </div>
+            )}
+
+            {/* TMB */}
+            {latest.bmr && (
+              <div className="bg-white rounded-3xl shadow-xl p-6 border-2 border-yellow-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl">
+                    <Zap className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-yellow-600">TMB</span>
+                </div>
+                <p className="text-4xl font-bold text-gray-900 mb-1">{latest.bmr}</p>
+                <p className="text-sm text-gray-600">kcal/dia</p>
+              </div>
+            )}
+
             {/* Última Medição */}
             <div className="bg-white rounded-3xl shadow-xl p-6 border-2 border-gray-100">
               <div className="flex items-center justify-between mb-4">
@@ -311,8 +338,10 @@ const BodyMetrics = ({ token }) => {
                   <tr className="border-b-2 border-gray-200">
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Data</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Peso (kg)</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Massa Magra (kg)</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Massa Magra</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Gordura (%)</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">IMC</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">TMB</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Notas</th>
                   </tr>
                 </thead>
@@ -323,6 +352,8 @@ const BodyMetrics = ({ token }) => {
                       <td className="py-4 px-4 font-semibold">{m.weight_kg}</td>
                       <td className="py-4 px-4">{m.muscle_mass_kg || '-'}</td>
                       <td className="py-4 px-4">{m.fat_percentage || '-'}</td>
+                      <td className="py-4 px-4 font-semibold text-green-600">{m.bmi || '-'}</td>
+                      <td className="py-4 px-4 font-semibold text-yellow-600">{m.bmr || '-'}</td>
                       <td className="py-4 px-4 text-sm text-gray-600">{m.notes || '-'}</td>
                     </tr>
                   ))}
