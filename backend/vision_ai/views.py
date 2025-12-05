@@ -102,21 +102,10 @@ class TranscribeAudioView(APIView):
             }, status=400)
 
         try:
-            # Configurar Gemini com Service Account
-            from google.oauth2 import service_account
-            import pathlib
-
-            credentials_path = pathlib.Path(__file__).parent.parent / 'google_credentials.json'
-
-            if credentials_path.exists():
-                credentials = service_account.Credentials.from_service_account_file(
-                    str(credentials_path),
-                    scopes=['https://www.googleapis.com/auth/generative-language']
-                )
-                genai.configure(credentials=credentials)
-            else:
-                # Fallback para API key se não houver service account
-                genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+            # Configurar Gemini com API Key (mesmo método usado no services.py)
+            from decouple import config
+            api_key = config('GEMINI_API_KEY')
+            genai.configure(api_key=api_key)
 
             # Salvar temporariamente o áudio
             with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_audio:
@@ -128,20 +117,29 @@ class TranscribeAudioView(APIView):
                 # Upload do arquivo para o Gemini
                 uploaded_file = genai.upload_file(temp_path)
 
+                # Aguardar processamento do arquivo
+                import time
+                while uploaded_file.state.name == "PROCESSING":
+                    time.sleep(1)
+                    uploaded_file = genai.get_file(uploaded_file.name)
+
+                if uploaded_file.state.name == "FAILED":
+                    raise Exception("Falha ao processar o arquivo de áudio")
+
                 # Usar o modelo Gemini Pro para transcrição de áudio
-                # (Flash não suporta áudio, mas Pro sim)
-                model = genai.GenerativeModel('gemini-1.5-pro')
+                model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
                 # Prompt para transcrição
                 prompt = """
-                Por favor, transcreva o áudio em português brasileiro.
-                Retorne apenas a transcrição, sem comentários ou formatação extra.
+                Por favor, transcreva este áudio em português brasileiro.
+                Retorne apenas a transcrição do que foi dito, sem comentários adicionais.
                 """
 
                 response = model.generate_content([uploaded_file, prompt])
                 transcription = response.text.strip()
 
-                # Limpar arquivo temporário
+                # Deletar arquivo do Gemini e limpar arquivo temporário local
+                genai.delete_file(uploaded_file.name)
                 os.unlink(temp_path)
 
                 return Response({
@@ -153,6 +151,10 @@ class TranscribeAudioView(APIView):
                 # Limpar arquivo temporário em caso de erro
                 if os.path.exists(temp_path):
                     os.unlink(temp_path)
+
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Erro específico na transcrição: {str(e)}", exc_info=True)
                 raise e
 
         except Exception as e:
