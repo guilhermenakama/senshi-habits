@@ -117,14 +117,20 @@ class TranscribeAudioView(APIView):
                 # Upload do arquivo para o Gemini
                 uploaded_file = genai.upload_file(temp_path)
 
-                # Aguardar processamento do arquivo
+                # Aguardar processamento do arquivo (até 30 segundos)
                 import time
-                while uploaded_file.state.name == "PROCESSING":
-                    time.sleep(1)
+                max_wait = 30
+                wait_time = 0
+                while uploaded_file.state.name == "PROCESSING" and wait_time < max_wait:
+                    time.sleep(2)
+                    wait_time += 2
                     uploaded_file = genai.get_file(uploaded_file.name)
 
                 if uploaded_file.state.name == "FAILED":
-                    raise Exception("Falha ao processar o arquivo de áudio")
+                    raise Exception(f"Gemini rejeitou o arquivo. Estado: {uploaded_file.state.name}. Verifique o formato do áudio.")
+
+                if uploaded_file.state.name == "PROCESSING":
+                    raise Exception(f"Timeout ao processar áudio após {max_wait}s. Tente um arquivo menor.")
 
                 # Usar o modelo Gemini que suporta áudio
                 # gemini-1.5-flash ou gemini-1.5-pro (sem o -latest)
