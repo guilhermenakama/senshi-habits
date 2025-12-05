@@ -32,15 +32,54 @@ class BodyMeasurement(models.Model):
     weight_kg = models.FloatField(help_text="Peso total em KG")
     muscle_mass_kg = models.FloatField(null=True, blank=True, help_text="Massa Magra em KG")
     fat_mass_percentage = models.FloatField(null=True, blank=True, help_text="% de Gordura")
-    
+
     # Foto do shape (Integração com MinIO!)
     photo_front = models.ImageField(upload_to='body_progress/', null=True, blank=True)
     photo_back = models.ImageField(upload_to='body_progress/', null=True, blank=True)
-    
+
     notes = models.TextField(blank=True)
 
     class Meta:
         ordering = ['-date'] # Mostra sempre o mais recente primeiro
+
+    def calculate_bmi(self):
+        """Calcula IMC (Índice de Massa Corporal) usando altura do perfil"""
+        try:
+            profile = self.user.profile
+            if profile.height_cm and profile.height_cm > 0:
+                height_m = profile.height_cm / 100
+                return round(self.weight_kg / (height_m ** 2), 1)
+        except:
+            pass
+        return None
+
+    def calculate_bmr(self):
+        """Calcula TMB (Taxa Metabólica Basal) usando fórmula de Harris-Benedict"""
+        try:
+            from datetime import date as date_cls
+            profile = self.user.profile
+
+            if not profile.height_cm or not profile.birth_date or not profile.gender:
+                return None
+
+            # Calcular idade
+            today = date_cls.today()
+            age = today.year - profile.birth_date.year
+            if (today.month, today.day) < (profile.birth_date.month, profile.birth_date.day):
+                age -= 1
+
+            # Fórmula de Harris-Benedict
+            if profile.gender == 'M':
+                # Homens: TMB = 88.362 + (13.397 × peso) + (4.799 × altura) - (5.677 × idade)
+                bmr = 88.362 + (13.397 * self.weight_kg) + (4.799 * profile.height_cm) - (5.677 * age)
+            else:  # Feminino
+                # Mulheres: TMB = 447.593 + (9.247 × peso) + (3.098 × altura) - (4.330 × idade)
+                bmr = 447.593 + (9.247 * self.weight_kg) + (3.098 * profile.height_cm) - (4.330 * age)
+
+            return round(bmr, 0)
+        except:
+            pass
+        return None
 
 # --- 3. PERFORMANCE (Treinos e PRs) ---
 class Exercise(models.Model):

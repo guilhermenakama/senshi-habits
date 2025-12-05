@@ -354,6 +354,8 @@ class BodyMetricsView(APIView):
                 'fat_percentage': m.fat_mass_percentage,
                 'muscle_mass_kg': m.muscle_mass_kg,
                 'muscle_mass_percentage': muscle_mass_percentage,
+                'bmi': m.calculate_bmi(),
+                'bmr': m.calculate_bmr(),
                 'notes': m.notes,
                 'has_photos': bool(m.photo_front or m.photo_back)
             })
@@ -437,6 +439,8 @@ class BodyMetricsView(APIView):
             'muscle_mass_kg': measurement.muscle_mass_kg,
             'fat_percentage': measurement.fat_mass_percentage,
             'muscle_mass_percentage': muscle_mass_percentage,
+            'bmi': measurement.calculate_bmi(),
+            'bmr': measurement.calculate_bmr(),
             'notes': measurement.notes,
             'message': 'Medição cadastrada com sucesso!'
         }, status=201)

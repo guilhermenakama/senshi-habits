@@ -8,6 +8,15 @@ class UserProfile(models.Model):
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
 
+    # --- DADOS PESSOAIS ---
+    GENDER_CHOICES = [
+        ('M', 'Masculino'),
+        ('F', 'Feminino'),
+    ]
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
+    birth_date = models.DateField(blank=True, null=True, help_text="Data de nascimento")
+    height_cm = models.FloatField(blank=True, null=True, help_text="Altura em centímetros")
+
     # --- PERFIS COMPORTAMENTAIS ---
     # MBTI - Myers-Briggs Type Indicator (16 personalidades)
     MBTI_CHOICES = [
