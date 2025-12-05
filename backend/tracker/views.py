@@ -50,9 +50,31 @@ class HabitLogViewSet(BaseUserViewSet): # Adicionei este para podermos marcar o 
     queryset = HabitLog.objects.all()
     serializer_class = HabitLogSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtrar por data se fornecida como query param
+        date_param = self.request.query_params.get('date', None)
+        if date_param:
+            queryset = queryset.filter(date=date_param)
+        return queryset
+
 class WorkoutViewSet(BaseUserViewSet):
     queryset = Workout.objects.all()
     serializer_class = WorkoutSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtrar por data se fornecida como query param
+        date_param = self.request.query_params.get('date', None)
+        if date_param:
+            # Workout usa date_time, então filtramos pela data (ignorando hora)
+            from datetime import datetime
+            try:
+                date_obj = datetime.fromisoformat(date_param).date()
+                queryset = queryset.filter(date_time__date=date_obj)
+            except ValueError:
+                pass
+        return queryset
 
 class PRViewSet(BaseUserViewSet):
     queryset = PersonalRecord.objects.all()
@@ -69,6 +91,20 @@ class LifeAssessmentViewSet(BaseUserViewSet):
 class JournalViewSet(BaseUserViewSet):
     queryset = JournalEntry.objects.all()
     serializer_class = JournalEntrySerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtrar por data se fornecida como query param
+        date_param = self.request.query_params.get('date', None)
+        if date_param:
+            # JournalEntry usa date (DateTimeField), então filtramos pela data (ignorando hora)
+            from datetime import datetime
+            try:
+                date_obj = datetime.fromisoformat(date_param).date()
+                queryset = queryset.filter(date__date=date_obj)
+            except ValueError:
+                pass
+        return queryset
 
 class WorkoutTemplateViewSet(BaseUserViewSet):
     queryset = WorkoutTemplate.objects.all()
