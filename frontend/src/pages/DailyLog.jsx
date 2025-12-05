@@ -419,8 +419,8 @@ const DailyLog = ({ token }) => {
       // 1. Salvar hábitos completados
       const completedHabitsIds = Array.from(checkedHabits);
       if (completedHabitsIds.length > 0) {
-        await Promise.all(completedHabitsIds.map(habitId =>
-          fetch(`${API_URL}/api/tracker/habit-logs/`, {
+        const habitResponses = await Promise.all(completedHabitsIds.map(async habitId => {
+          const response = await fetch(`${API_URL}/api/tracker/habit-logs/`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -431,14 +431,23 @@ const DailyLog = ({ token }) => {
               date: date,
               completed: true
             })
-          })
-        ));
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Erro ao salvar hábito ${habitId}:`, response.status, errorText);
+            throw new Error(`Erro ao salvar hábito: ${response.status}`);
+          }
+
+          return response;
+        }));
+        console.log('✅ Hábitos salvos com sucesso');
       }
 
       // 2. Salvar treino (todos os exercícios juntos)
       const completedExercises = workoutData.filter(ex => ex.exercise_name && ex.exercise_name.trim());
       if (completedExercises.length > 0) {
-        await fetch(`${API_URL}/api/tracker/workouts/`, {
+        const workoutResponse = await fetch(`${API_URL}/api/tracker/workouts/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -451,6 +460,13 @@ const DailyLog = ({ token }) => {
             feeling: journal.mood || 3
           })
         });
+
+        if (!workoutResponse.ok) {
+          const errorText = await workoutResponse.text();
+          console.error('Erro ao salvar treino:', workoutResponse.status, errorText);
+          throw new Error(`Erro ao salvar treino: ${workoutResponse.status}`);
+        }
+        console.log('✅ Treino salvo com sucesso');
       }
 
       // 3. Salvar journal (incluindo auto-avaliação)
@@ -459,7 +475,7 @@ const DailyLog = ({ token }) => {
         : journal.content;
 
       if (fullJournalContent.trim() || journal.mood) {
-        await fetch(`${API_URL}/api/tracker/journal/`, {
+        const journalResponse = await fetch(`${API_URL}/api/tracker/journal/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -471,14 +487,22 @@ const DailyLog = ({ token }) => {
             date: date
           })
         });
+
+        if (!journalResponse.ok) {
+          const errorText = await journalResponse.text();
+          console.error('Erro ao salvar journal:', journalResponse.status, errorText);
+          throw new Error(`Erro ao salvar journal: ${journalResponse.status}`);
+        }
+        console.log('✅ Journal salvo com sucesso');
       }
 
+      console.log('🎉 Tudo salvo com sucesso!');
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
 
     } catch (error) {
-      console.error("Erro ao salvar dia:", error);
-      alert("Erro ao salvar. Tente novamente.");
+      console.error("❌ Erro ao salvar dia:", error);
+      alert(`Erro ao salvar: ${error.message}`);
     } finally {
       setLoading(false);
     }
